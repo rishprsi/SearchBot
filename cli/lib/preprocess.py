@@ -1,5 +1,6 @@
 import string
 from .search_utils import load_stopwords
+from nltk.stem import PorterStemmer
 
 
 def preprocess(word: str):
@@ -12,9 +13,12 @@ def preprocess(word: str):
     word = word.translate(table)
 
     # Tokenize the words into a list of strings
-    tokens = [x for x in word.split(" ") if x]
+    tokens = [x for x in word.split() if x]
 
     # Remove st op words
     stopwords = load_stopwords()
     tokens = list(filter(lambda x: x not in stopwords, tokens))
+    stemmer = PorterStemmer()
+    for index in range(len(tokens)):
+        tokens[index] = stemmer.stem(tokens[index])
     return tokens

@@ -1,11 +1,5 @@
 import json
-import os
-
-MOVIEKEY = "movies"
-
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-DATA_PATH = os.path.join(PROJECT_ROOT, "data", "movies.json")
-STOPWORD_PATH = os.path.join(PROJECT_ROOT, "data", "stopwords.txt")
+from .constants import MOVIEKEY, DATA_PATH, STOPWORD_PATH
 
 
 def import_json():
