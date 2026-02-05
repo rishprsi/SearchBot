@@ -2,7 +2,7 @@
 
 import argparse
 
-from lib.search_utils import chunk_text
+from lib.search_utils import chunk_text, semantic_chunk_text
 from lib.semantic_search import (
     embed_query_text,
     embed_text,
@@ -19,9 +19,14 @@ commands = {
     "verify_embeddings": [],
     "embedquery": ["query"],
     "chunk": ["text"],
+    "semantic_chunk": ["text"],
 }
 
-opt_args = {"search": [("limit", 5)], "chunk": [("chunk-size", 200), ("overlap", 20)]}
+opt_args = {
+    "search": [("limit", 5)],
+    "chunk": [("chunk-size", 200), ("overlap", 20)],
+    "semantic_chunk": [("max-chunk-size", 4), ("overlap", 0)],
+}
 
 query_type = {
     "query": str,
@@ -31,6 +36,7 @@ query_type = {
     "limit": int,
     "chunk-size": int,
     "overlap": int,
+    "max-chunk-size": int,
 }
 
 help = {
@@ -41,13 +47,15 @@ help = {
     "verify_embeddings": "Builds the embeddings / loads from cache if it already exists",
     "embedquery": "Get the embedding of a query text",
     "chunk": "Chunk the provided text into fixed size chunks",
+    "semantic_chunk": "Convert text into semantic chunks",
     # Help for arguments
     "query": "The term you need to search for",
     "text": "Text input to be processed",
     # Positional arguments
     "limit": "Number of results as output (Default 5)",
     "chunk-size": "The size of each chunk (Default 200)",
-    "overlap": "Number of words to overlap in chunks",
+    "overlap": "Number of words to overlap in chunks (Default 0)",
+    "max-chunk-size": "Maximum allowed size of the chunk (Default 4)",
 }
 
 
@@ -88,6 +96,14 @@ def main():
             print(f"Chunking {len(args.text)} characters")
             for index, chunk in enumerate(chunks):
                 print(f"{index + 1}. {chunk}")
+        case "semantic_chunk":
+            sentences = semantic_chunk_text(
+                args.text, args.max_chunk_size, args.overlap
+            )
+            print(f"Semantically chunking {len(args.text)} characters")
+            for index, sentence in enumerate(sentences):
+                print(f"{index + 1}. {sentence}")
+
         case _:
             parser.print_help()
 
