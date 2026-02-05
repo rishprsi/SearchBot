@@ -1,5 +1,4 @@
 import math
-from .preprocess import preprocess
 from .constants import DEFAULT_SEARCH_LIMIT
 from .inverted_index import InvertedIndex
 
@@ -7,21 +6,13 @@ from .inverted_index import InvertedIndex
 def search_title(keyword: str, limit=DEFAULT_SEARCH_LIMIT):
     idx = InvertedIndex()
     idx.load()
-    filtered_movies = []
-    seen = set()
-    keyword_tokens = preprocess(keyword)
+    return idx.search(keyword, limit)
 
-    for keyword_token in keyword_tokens:
-        doc_ids = idx.get_documents(keyword_token)
-        for doc_id in doc_ids:
-            if doc_id in seen:
-                continue
-            seen.add(doc_id)
-            movie = idx.docmap[doc_id]
-            filtered_movies.append(movie)
-            if len(filtered_movies) >= limit:
-                return filtered_movies
-    return filtered_movies
+
+def bm25_search_title(term: str, limit=DEFAULT_SEARCH_LIMIT) -> list[tuple]:
+    inverted_index = InvertedIndex()
+    inverted_index.load()
+    return inverted_index.bm25_search(term, limit)
 
 
 def build():

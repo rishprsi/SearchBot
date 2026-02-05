@@ -17,3 +17,18 @@ def load_stopwords() -> list[str]:
     except Exception as e:
         print(e)
         return []
+
+
+def chunk_text(text: str, chunk_size: int, overlap: int) -> list[list[str]]:
+    words = text.split()
+    res = []
+    length = len(words)
+    curr = 0
+
+    while curr < length:
+        res.append(
+            " ".join(words[max(0, curr - overlap) : min(length, curr + chunk_size)])
+        )
+        curr += chunk_size
+
+    return res

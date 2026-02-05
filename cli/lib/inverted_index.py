@@ -2,7 +2,7 @@ from collections import Counter
 from .preprocess import preprocess
 from pathlib import Path
 from .search_utils import import_json
-from .constants import TITLE_KEY, DESCRIPTION_KEY, ID_KEY, CACHE_PATH, BM25_K1
+from .constants import TITLE_KEY, DESCRIPTION_KEY, ID_KEY, CACHE_PATH, BM25_K1, BM25_B
 import pickle
 import os
 import math
@@ -16,15 +16,27 @@ class InvertedIndex:
         self.index_path = os.path.join(CACHE_PATH, "index.pkl")
         self.docmap_path = os.path.join(CACHE_PATH, "docmap.pkl")
         self.tf_path = os.path.join(CACHE_PATH, "term_frequencies.pkl")
+        self.doc_lengths_path = os.path.join(CACHE_PATH, "doc_lengths.pkl")
+        self.doc_lengths = dict()
 
     def __add_document(self, doc_id, text) -> None:
         tokens = preprocess(text)
         self.term_frequencies[doc_id] = Counter()
+        self.doc_lengths[doc_id] = len(tokens)
         for token in tokens:
             if token not in self.index:
                 self.index[token] = set()
             self.term_frequencies[doc_id][token] += 1
             self.index[token].add(doc_id)
+
+    def __get_avg_doc_length(self) -> float:
+        res = 0.0
+        for length in self.doc_lengths.values():
+            res += length
+        if self.doc_lengths:
+            return res / len(self.doc_lengths.keys())
+        else:
+            return res
 
     def get_documents(self, term) -> list[str]:
         res = []
@@ -45,12 +57,14 @@ class InvertedIndex:
         res = 0
         if doc_id_counter:
             res = doc_id_counter.get(term)
-        return res
+        return res if res else 0
 
-    def get_bm25_tf(self, doc_id, term) -> float:
+    def get_bm25_tf(self, doc_id, term, k1=BM25_K1, b=BM25_B) -> float:
         tf = self.get_tf(doc_id, term)
-        k1 = BM25_K1
-        res = (tf * (k1 + 1)) / (tf + k1)
+        length_norm = (
+            1 - b + b * (self.doc_lengths[doc_id] / self.__get_avg_doc_length())
+        )
+        res = (tf * (k1 + 1)) / (tf + k1 * length_norm)
         return res
 
     def get_idf(self, term: str) -> float:
@@ -79,6 +93,46 @@ class InvertedIndex:
         tf = self.get_tf(doc_id, term)
         idf = self.get_idf(term)
         return tf * idf
+
+    def bm25(self, doc_id, term):
+        tf = self.get_bm25_tf(doc_id, term)
+        idf = self.get_bm25_idf(term)
+        return tf * idf
+
+    def search(self, term, limit):
+        filtered_movies = []
+        seen = set()
+        keyword_tokens = preprocess(term)
+
+        for keyword_token in keyword_tokens:
+            doc_ids = self.get_documents(keyword_token)
+            for doc_id in doc_ids:
+                if doc_id in seen:
+                    continue
+                seen.add(doc_id)
+                movie = self.docmap[doc_id]
+                filtered_movies.append(movie)
+                if len(filtered_movies) >= limit:
+                    return filtered_movies
+        return filtered_movies
+
+    def bm25_search(self, query, limit) -> list[tuple]:
+        query_tokens = preprocess(query)
+        scores = dict()
+        for token in query_tokens:
+            doc_ids = self.get_documents(token)
+            for doc_id in doc_ids:
+                if not scores.get(doc_id):
+                    scores[doc_id] = 0
+                scores[doc_id] += self.bm25(doc_id, token)
+
+        sorted_results = sorted(list(scores.items()), key=lambda x: x[1], reverse=True)
+        filtered_movies = []
+        for result in sorted_results:
+            filtered_movies.append((self.docmap[result[0]], result[1]))
+            if len(filtered_movies) == limit:
+                break
+        return filtered_movies
 
     def build(self) -> None:
         movies = import_json()
@@ -109,6 +163,10 @@ class InvertedIndex:
             pickle.dump(self.term_frequencies, file)
             file.close()
 
+        with open(self.doc_lengths_path, "wb") as file:
+            pickle.dump(self.doc_lengths, file)
+            file.close()
+
     def load(self):
         if not Path.is_file(Path(self.index_path)):
             raise Exception("File not found")
@@ -124,3 +182,8 @@ class InvertedIndex:
             raise Exception("File not found")
         with open(self.tf_path, "rb") as file:
             self.term_frequencies = pickle.load(file)
+
+        if not Path.is_file(Path(self.doc_lengths_path)):
+            raise Exception("File not found")
+        with open(self.doc_lengths_path, "rb") as file:
+            self.doc_lengths = pickle.load(file)
