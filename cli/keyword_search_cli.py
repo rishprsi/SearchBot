@@ -1,5 +1,6 @@
 import argparse
 import traceback
+from cli.lib.argparse_util import get_parser
 from lib.constants import DOCUMENT_KEY, SCORE_KEY, TITLE_KEY
 from lib.keyword_search import (
     bm25_search_title,
@@ -44,16 +45,8 @@ help = {
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Keyword Search CLI")
-    subparsers = parser.add_subparsers(dest="command", help="Available commands")
-    parsers = dict()
 
-    for command in commands.keys():
-        parsers[command] = subparsers.add_parser(command, help=help[command])
-        for argument in commands[command]:
-            parsers[command].add_argument(
-                argument, type=query_type[argument], help=help[argument]
-            )
-
+    parser = get_parser(parser, commands, {}, {}, {}, query_type, help)
     args = parser.parse_args()
 
     match args.command:

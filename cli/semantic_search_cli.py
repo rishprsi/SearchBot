@@ -2,6 +2,7 @@
 
 import argparse
 
+from cli.lib.argparse_util import get_parser
 from lib.constants import DESCRIPTION_KEY, DOCUMENT_KEY, TITLE_KEY
 from lib.chunked_semantic_search import embed_chunks, search_chunked
 from lib.search_utils import chunk_text, semantic_chunk_text
@@ -68,23 +69,7 @@ help = {
 
 def main():
     parser = argparse.ArgumentParser(description="Semantic Search CLI")
-    subparsers = parser.add_subparsers(dest="command", description="Available commands")
-    command_parsers = dict()
-
-    for command in commands:
-        command_parsers[command] = subparsers.add_parser(command, help=help[command])
-        for argument in commands[command]:
-            command_parsers[command].add_argument(
-                argument, type=query_type[argument], help=help[argument]
-            )
-        if command in opt_args:
-            for opt_arg, default_size in opt_args[command]:
-                command_parsers[command].add_argument(
-                    "--" + opt_arg,
-                    type=query_type[opt_arg],
-                    help=help[opt_arg],
-                    default=default_size,
-                )
+    parser = get_parser(parser, commands, opt_args, {}, {}, query_type, help)
     args = parser.parse_args()
 
     match args.command:
