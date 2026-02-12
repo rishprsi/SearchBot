@@ -9,7 +9,7 @@ def search_title(keyword: str, limit=DEFAULT_SEARCH_LIMIT):
     return idx.search(keyword, limit)
 
 
-def bm25_search_title(term: str, limit=DEFAULT_SEARCH_LIMIT) -> list[tuple]:
+def bm25_search_title(term: str, limit=DEFAULT_SEARCH_LIMIT) -> list[dict]:
     inverted_index = InvertedIndex()
     inverted_index.load()
     return inverted_index.bm25_search(term, limit)

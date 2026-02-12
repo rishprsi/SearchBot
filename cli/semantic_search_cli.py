@@ -2,6 +2,8 @@
 
 import argparse
 
+from lib.constants import DESCRIPTION_KEY, DOCUMENT_KEY, TITLE_KEY
+from lib.chunked_semantic_search import embed_chunks, search_chunked
 from lib.search_utils import chunk_text, semantic_chunk_text
 from lib.semantic_search import (
     embed_query_text,
@@ -14,16 +16,19 @@ from lib.semantic_search import (
 
 commands = {
     "search": ["query"],
+    "search_chunked": ["query"],
     "verify": [],
     "embed_text": ["text"],
     "verify_embeddings": [],
     "embedquery": ["query"],
     "chunk": ["text"],
     "semantic_chunk": ["text"],
+    "embed_chunks": [],
 }
 
 opt_args = {
     "search": [("limit", 5)],
+    "search_chunked": [("limit", 5)],
     "chunk": [("chunk-size", 200), ("overlap", 20)],
     "semantic_chunk": [("max-chunk-size", 4), ("overlap", 0)],
 }
@@ -42,12 +47,14 @@ query_type = {
 help = {
     # Help for commands
     "search": "Search a term from the database",
+    "search_chunked": "Search a term after chunking the database",
     "verify": "Verifies that the model is up and functional",
     "embed_text": "Embeds a  text into vector embeddings for semantic search",
     "verify_embeddings": "Builds the embeddings / loads from cache if it already exists",
     "embedquery": "Get the embedding of a query text",
     "chunk": "Chunk the provided text into fixed size chunks",
     "semantic_chunk": "Convert text into semantic chunks",
+    "embed_chunks": "Embed chunks from the documents and cache it",
     # Help for arguments
     "query": "The term you need to search for",
     "text": "Text input to be processed",
@@ -83,6 +90,14 @@ def main():
     match args.command:
         case "search":
             search(args.query, args.limit)
+        case "search_chunked":
+            movies = search_chunked(args.query, args.limit)
+            for index, movie_dict in enumerate(movies):
+                movie = movie_dict[DOCUMENT_KEY]
+                print(
+                    f"\n{index + 1}. {movie[TITLE_KEY]} (score: {movie_dict['score']:.4f})"
+                )
+                print(f"{movie[DESCRIPTION_KEY]}...")
         case "verify":
             verify_model()
         case "embed_text":
@@ -103,7 +118,9 @@ def main():
             print(f"Semantically chunking {len(args.text)} characters")
             for index, sentence in enumerate(sentences):
                 print(f"{index + 1}. {sentence}")
-
+        case "embed_chunks":
+            embeddings = embed_chunks()
+            print(f"Generated {len(embeddings)} chunked embeddings")
         case _:
             parser.print_help()
 

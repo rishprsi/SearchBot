@@ -1,5 +1,11 @@
 import json
-from .constants import MOVIEKEY, DATA_PATH, STOPWORD_PATH
+from .constants import (
+    GOLDEN_DATA_PATH,
+    MOVIEKEY,
+    DATA_PATH,
+    STOPWORD_PATH,
+    TESTCASE_KEY,
+)
 import regex as re
 
 
@@ -9,6 +15,14 @@ def import_json():
         json_dict = json.load(f)
 
     return json_dict[MOVIEKEY]
+
+
+def import_golden_dataset():
+    json_dict = {}
+
+    with open(GOLDEN_DATA_PATH, "r") as f:
+        json_dict = json.load(f)
+    return json_dict[TESTCASE_KEY]
 
 
 def load_stopwords() -> list[str]:
@@ -36,18 +50,24 @@ def chunk_text(text: str, chunk_size: int, overlap: int) -> list[str]:
 
 
 def semantic_chunk_text(text: str, max_chunk_size: int, overlap: int) -> list[str]:
-    print("incoming text is: ", text)
+    text = text.strip()
+    if not text:
+        return []
     sentences = re.split(r"(?<=[.!?])\s+", text)
-    res = []
     length = len(sentences)
-    curr = 0
+
+    for index in range(length):
+        curr = sentences[index]
+        curr = curr.strip()
+        if not curr:
+            sentences.pop(index)
+        sentences[index] = curr
+    res = [" ".join(sentences[: min(max_chunk_size, length)])]
+    curr = max_chunk_size
+    increments = max_chunk_size - overlap
 
     while curr < length:
-        res.append(
-            " ".join(
-                sentences[max(0, curr - overlap) : min(length, curr + max_chunk_size)]
-            )
-        )
-        curr += max_chunk_size
+        res.append(" ".join(sentences[curr - overlap : min(length, curr + increments)]))
+        curr += increments
 
     return res

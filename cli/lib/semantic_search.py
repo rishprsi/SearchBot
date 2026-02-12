@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from typing import Any
 from sentence_transformers import SentenceTransformer
 import numpy as np
 
@@ -15,8 +14,8 @@ from .search_utils import import_json
 
 
 class SemanticSearch:
-    def __init__(self):
-        self.model = SentenceTransformer("all-MiniLM-L6-v2")
+    def __init__(self, model_name="all-MiniLM-L6-v2"):
+        self.model = SentenceTransformer(model_name)
         self.embeddings = None
         self.documents = None
         self.document_map = dict()
@@ -130,7 +129,7 @@ def embed_query_text(query: str):
     print(f"Shape: {embedding.shape}")
 
 
-def cosine_similarity(vec1, vec2):
+def cosine_similarity(vec1, vec2) -> float:
     # print(np.linalg.norm(vec1))
     # print(np.isnan(vec1).any(), np.isinf(vec1).any())
     # print(np.linalg.norm(vec2))
@@ -152,5 +151,5 @@ def search(query: str, limit=DEFAULT_SEARCH_LIMIT):
     results = sem_search.search(query, limit)
     for index, movie in enumerate(results):
         print(f"{index}. {movie[TITLE_KEY]} (score: {movie[SCORE_KEY]:.4f})")
-        print(movie[DESCRIPTION_KEY])
+        # print(movie[DESCRIPTION_KEY])
         print("\n")

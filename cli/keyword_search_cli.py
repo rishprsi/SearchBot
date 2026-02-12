@@ -1,6 +1,6 @@
 import argparse
 import traceback
-from lib.constants import TITLE_KEY
+from lib.constants import DOCUMENT_KEY, SCORE_KEY, TITLE_KEY
 from lib.keyword_search import (
     bm25_search_title,
     search_title,
@@ -68,9 +68,10 @@ def main() -> None:
         case "bm25search":
             print(f"Searching for: {args.query} using bm25")
             filtered_movies = bm25_search_title(args.query)
-            for index, movie in enumerate(filtered_movies):
+            for index, movie_dict in enumerate(filtered_movies):
+                movie, score = movie_dict[DOCUMENT_KEY], movie_dict[SCORE_KEY]
                 print(
-                    f"{index + 1}. ({movie[0]['id']}) {movie[0][TITLE_KEY]} - Score: {movie[1]:.2f}"
+                    f"{index + 1}. ({movie['id']}) {movie[TITLE_KEY]} - Score: {score:.2f}"
                 )
         case "build":
             print("Building pickle files")

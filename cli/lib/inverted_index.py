@@ -1,8 +1,18 @@
 from collections import Counter
+
 from .preprocess import preprocess
 from pathlib import Path
 from .search_utils import import_json
-from .constants import TITLE_KEY, DESCRIPTION_KEY, ID_KEY, CACHE_PATH, BM25_K1, BM25_B
+from .constants import (
+    DOCUMENT_KEY,
+    SCORE_KEY,
+    TITLE_KEY,
+    DESCRIPTION_KEY,
+    ID_KEY,
+    CACHE_PATH,
+    BM25_K1,
+    BM25_B,
+)
 import pickle
 import os
 import math
@@ -82,7 +92,9 @@ class InvertedIndex:
             raise ValueError("term must be a single token")
         token = tokens[0]
         doc_count = len(self.docmap)
-        term_doc_count = len(self.index[token])
+        term_doc_count = 0
+        if token in self.index:
+            term_doc_count = len(self.index[token])
         return math.log((doc_count - term_doc_count + 0.5) / (term_doc_count + 0.5) + 1)
 
     def get_tfidf(self, doc_id, term) -> float:
@@ -116,7 +128,7 @@ class InvertedIndex:
                     return filtered_movies
         return filtered_movies
 
-    def bm25_search(self, query, limit) -> list[tuple]:
+    def bm25_search(self, query, limit) -> list[dict]:
         query_tokens = preprocess(query)
         scores = dict()
         for token in query_tokens:
@@ -129,7 +141,9 @@ class InvertedIndex:
         sorted_results = sorted(list(scores.items()), key=lambda x: x[1], reverse=True)
         filtered_movies = []
         for result in sorted_results:
-            filtered_movies.append((self.docmap[result[0]], result[1]))
+            filtered_movies.append(
+                {DOCUMENT_KEY: self.docmap[result[0]], SCORE_KEY: result[1]}
+            )
             if len(filtered_movies) == limit:
                 break
         return filtered_movies
