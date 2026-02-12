@@ -104,7 +104,9 @@ def weighted_search(query, alpha, limit):
     return hybrid_search.weighted_search(query, alpha, limit)
 
 
-def rrf_search(query, k, limit, enhance, rerank_method, evaluate):
+def rrf_search(
+    query, k, limit, enhance, rerank_method, evaluate, full_description=False
+):
     if enhance == "spell":
         query = llm_spellcheck(query)
     elif enhance == "rewrite":
@@ -135,10 +137,11 @@ def rrf_search(query, k, limit, enhance, rerank_method, evaluate):
     limit = min(limit, len(results))
     if evaluate:
         llm_scores = llm_evaluate_results(query, results[:limit])
-    for index, result in enumerate(results):
-        results[index][DOCUMENT_KEY][DESCRIPTION_KEY] = results[index][DOCUMENT_KEY][
-            DESCRIPTION_KEY
-        ][:100]
+    if not full_description:
+        for index, result in enumerate(results):
+            results[index][DOCUMENT_KEY][DESCRIPTION_KEY] = results[index][
+                DOCUMENT_KEY
+            ][DESCRIPTION_KEY][:100]
 
     for index, llm_score in enumerate(llm_scores):
         results[index][LLM_SCORE] = llm_score
