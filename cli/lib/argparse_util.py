@@ -1,7 +1,13 @@
 import argparse
 
 
-def get_parser(parser, commands, opt_args, choice_args, bool_args, query_type, help):
+def get_parser(
+    parser, commands, opt_args, choice_args, bool_args, query_type, help, parser_args=[]
+):
+    for parser_arg in parser_args:
+        parser.add_argument(
+            parser_arg, type=query_type[parser_arg], help=help[parser_arg]
+        )
     subparsers = parser.add_subparsers(dest="command", description="Available commands")
     command_parsers = dict()
 
