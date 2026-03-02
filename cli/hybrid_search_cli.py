@@ -1,7 +1,7 @@
 import argparse
 from dotenv import load_dotenv
 
-from cli.lib.argparse_util import get_parser
+from lib.argparse_util import get_parser
 from lib.constants import (
     BM25_RANK,
     BM25_SCORE,
